@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 
 namespace TechOilFrontend.Controllers
 {
@@ -24,8 +27,25 @@ namespace TechOilFrontend.Controllers
 			var token = await baseApi.PostToApi("Login", login);
 			var resultadoLogin = token as OkObjectResult;
 			var resultadoObjeto = JsonConvert.DeserializeObject<Models.Login>(resultadoLogin.Value.ToString());
-			ViewBag.Nombre = resultadoObjeto.Name;
-			return View("~/Views/Home/Index.cshtml", resultadoObjeto);
+
+
+			var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme, ClaimTypes.Name, ClaimTypes.Role);
+			Claim claimNombre = new(ClaimTypes.Name, resultadoObjeto.Name);
+			Claim claimRole = new(ClaimTypes.Role, "1"); //modificar api para que me devuelva el role
+			Claim claimEmail = new(ClaimTypes.Email, resultadoObjeto.Email);
+
+			identity.AddClaim(claimNombre);
+			identity.AddClaim(claimRole);
+			identity.AddClaim(claimEmail);
+
+			var claimPrincipal = new ClaimsPrincipal(identity);
+
+			await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimPrincipal, new AuthenticationProperties
+			{
+				ExpiresUtc = DateTime.Now.AddHours(1)
+			});
+
+            return View("~/Views/Home/Index.cshtml", resultadoObjeto);
 		}
 	}
 }
