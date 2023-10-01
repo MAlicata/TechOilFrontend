@@ -44,8 +44,14 @@ namespace TechOilFrontend.Controllers
 			{
 				ExpiresUtc = DateTime.Now.AddHours(1)
 			});
-
+			 
             return View("~/Views/Home/Index.cshtml", resultadoObjeto);
+		}
+
+		public async Task<IActionResult> CerrarSesion()
+		{
+			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+			return RedirectToAction("Login", "Login");
 		}
 	}
 }
